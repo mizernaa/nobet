@@ -18,6 +18,15 @@ uyarısı vermez) ve doğrudan **yazdırma / PDF** desteği vardır.
 | Hafta sonu, resmî ve dinî bayram | `08:30–20:30` + `20:30–08:30` | 24 saat |
 | Yarım gün (arife) | `13:00–20:30` + `20:30–08:30` | 19,5 saat |
 
+**Her vardiyada birden çok nöbet yeri vardır** (varsayılan **4 görevli**). Görevli
+sayısı 1–12 arası ayarlanabilir ve nöbet yerlerine ad verilebilir (*Ana Kapı,
+Kule, Devriye, Telsiz* gibi) — bu adlar çizelgenin ve Excel'in kolon başlıkları
+olur. Aynı kişi bir vardiyada iki yeri tutamaz.
+
+4 görevliyle bir ay tipik olarak **62 vardiya × 4 = 248 nöbet, ~2.220 saat**
+eder. Kişi başı yükün makul kalması için personel sayısının görevli sayısının en
+az iki katı olması gerekir; altında kalırsanız uygulama uyarır.
+
 Hafta içi **08:30–17:30** mesai saatlerinde nöbet yoktur. `01:30–08:30` nöbeti
 yalnızca **önceki gün normal bir iş günüyse** açılır — çünkü o günün
 `17:30–01:30` nöbeti gecenin ilk yarısını zaten kapatmıştır. Böylece ay boyunca
@@ -62,8 +71,12 @@ ortalamadan sapma görünür — **her değişiklikte anında güncellenir**.
 
 Vardiya süreleri tam saat katları olmadığı için (7 / 8 / 12 saat) kusursuz
 eşitlik matematiksel olarak her zaman mümkün değildir; uygulama ulaşılabilir en
-düz dağıtımı arar. Tipik sonuç, kişi başı ~60 saatlik bir ayda **1–5 saatlik**
-bir aralıktır. Kalan farkı **Devir** alanlarıyla bir sonraki aya taşıyabilirsiniz.
+düz dağıtımı arar. 4 görevli ve 24 kişilik bir kadroda tipik sonuç, kişi başı
+~92 saatlik bir ayda **2–4 saatlik** bir aralıktır. Kalan farkı **Devir**
+alanlarıyla bir sonraki aya taşıyabilirsiniz.
+
+Dağıtım hesabı personel ve görevli sayısına göre **1,5–5 saniye** sürer; bu
+sırada "hesaplanıyor" bilgisi görünür.
 
 ### Elle düzeltme
 
@@ -86,6 +99,8 @@ ekleyebilirsiniz.
 
 | Ayar | Ne yapar |
 |---|---|
+| Her nöbette görevli sayısı | Bir vardiyada kaç kişi nöbet tutacak (varsayılan 4) |
+| Nöbet yeri adları | Kolon başlıkları — boş bırakılırsa “1. Nöbetçi, 2. Nöbetçi …” |
 | Asgari dinlenme | İki nöbet arasında bırakılacak en az süre (varsayılan 12 saat) |
 | Azami üst üste nöbet günü | Kesintisiz nöbet günü sınırı (0 = sınırsız) |
 | Gece saati denge ağırlığı | Toplam saat dengesi ile gece saati dengesi arasındaki tercih |
@@ -99,16 +114,20 @@ Zorunlu hâllerde bile **çakışma** ve **izin günü** ihlal edilmez; sıkış
 
 ## Çıktılar
 
+Çizelgede **her vardiya kendi satırını** alır; tarih, gün ve gün durumu hücreleri
+o günün vardiyaları boyunca dikey olarak birleştirilir. Nöbet yerleri kolonlarda
+yer alır.
+
 **Excel** iki sayfa üretir: *Nöbet Listesi* (başlık, gün tipine göre renkli
-çizelge, altta iki imza alanı) ve *Özet* (kişi bazlı toplamlar, sayısal
-hücreler). Başlık satırı donuk, her sayfada yinelenir, sayfaya sığdırılmış
-olarak gelir.
+çizelge, birleştirilmiş tarih hücreleri, altta iki imza alanı) ve *Özet* (kişi
+bazlı toplamlar, sayısal hücreler). Başlık satırı donuk, her sayfada yinelenir,
+sayfaya sığdırılmış olarak gelir; 4+ görevlide yatay sayfa düzenine geçer.
 
 **Yazdır / PDF** ile bir ay tek A4 sayfaya, imza alanlarıyla birlikte sığar;
 özet tablosu ayrı sayfaya geçer.
 
-İmza alanlarındaki unvan ve adları doğrudan sayfada yazabilirsiniz; hem Excel'e
-hem çıktıya geçer.
+İmza alanları **Şube Müdürü** ve **Daire Başkanı** olarak hazır gelir; unvan ve
+adları doğrudan sayfada değiştirebilirsiniz — hem Excel'e hem çıktıya geçer.
 
 ---
 

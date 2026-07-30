@@ -84,6 +84,9 @@ tr.t-half td{background:var(--half)}
 tr.t-work td{background:var(--work)}
 td.na{color:#c3cad6;background:repeating-linear-gradient(45deg,#fafbfd,#fafbfd 5px,#f2f4f8 5px,#f2f4f8 10px)!important}
 .daycol{white-space:nowrap;font-weight:600}
+.shiftcol{white-space:nowrap;font-size:12px;line-height:1.25}
+.shiftcol b{font-weight:650}
+.shiftcol .shmeta{display:block;font-size:10.5px;color:var(--muted);font-weight:400}
 .tagcol{font-size:11.5px;color:#4b5563;text-align:left;white-space:nowrap}
 .cellsel{width:100%;min-width:120px;border:1px solid transparent;background:transparent;padding:3px 4px;font-size:12.5px;border-radius:5px}
 .cellsel:hover{border-color:var(--line);background:#fff}
@@ -151,6 +154,8 @@ td.empty .cellsel{color:var(--err);font-weight:700}
   thead{display:table-header-group}
   .cellsel,.lockbtn{display:none!important}
   .print-name{display:inline;font-size:9.5px;color:#111}
+  .shiftcol{font-size:8.5px}
+  .shiftcol .shmeta{font-size:7.5px;color:#555}
   .tagcol{color:#1b2330}
   td.locked{box-shadow:none}
   .signs{padding:22px 30px 0}
@@ -204,6 +209,15 @@ td.empty .cellsel{color:var(--err);font-weight:700}
             <option value="2">Yüksek</option>
             <option value="4">Çok yüksek</option>
           </select></label>
+        <label class="fld"><span>Her nöbette görevli sayısı</span>
+          <input type="number" id="inpPosts" min="1" max="12" step="1"></label>
+      </div>
+      <div class="row" style="margin-top:11px;align-items:flex-end">
+        <div style="flex:1;min-width:280px">
+          <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:3px">
+            Nöbet yeri adları <span style="font-weight:400">(boş bırakılırsa “1. Nöbetçi, 2. Nöbetçi …”)</span></div>
+          <div class="row" id="postNameRow" style="gap:6px"></div>
+        </div>
       </div>
       <p class="hint">Hafta içi <b>08:30–17:30</b> mesai saatleri dışında kalan tüm zaman; hafta sonu, resmî ve dinî bayramlarda ise <b>24 saat</b> nöbetle kapatılır. <b>20:00–06:00</b> arası gece nöbeti sayılır ve ayrıca dengelenir.</p>
     </div>
@@ -279,7 +293,7 @@ td.empty .cellsel{color:var(--err);font-weight:700}
 
   <!-- ============ GRID ============ -->
   <div class="panel" id="gridPanel">
-    <h2 class="noprint"><span class="noprint">5 &middot; </span>Nöbet Çizelgesi
+    <h2 class="noprint"><span><span class="noprint">5 &middot; </span>Nöbet Çizelgesi</span>
       <span class="n">
         <button class="sm" id="btnClearLocks">Kilitleri Temizle</button>
         <button class="sm danger" id="btnClearAll">Çizelgeyi Boşalt</button>
@@ -289,15 +303,7 @@ td.empty .cellsel{color:var(--err);font-weight:700}
     <div class="report-sub" id="reportSub"></div>
     <div class="body">
       <div class="tbl-scroll"><table id="gridTable">
-        <thead><tr>
-          <th style="width:74px">Tarih</th>
-          <th style="width:72px">Gün</th>
-          <th class="l" style="width:118px">Gün Durumu</th>
-          <th>01:30 – 08:30<br><span style="font-weight:400;font-size:10.5px;opacity:.8">7,0 sa &middot; 4,5 gece</span></th>
-          <th>08:30 – 20:30<br><span style="font-weight:400;font-size:10.5px;opacity:.8">12,0 sa &middot; 0,5 gece</span></th>
-          <th>17:30 – 01:30<br><span style="font-weight:400;font-size:10.5px;opacity:.8">8,0 sa &middot; 5,5 gece</span></th>
-          <th>20:30 – 08:30<br><span style="font-weight:400;font-size:10.5px;opacity:.8">12,0 sa &middot; 9,5 gece</span></th>
-        </tr></thead>
+        <thead><tr id="gridHead"></tr></thead>
         <tbody id="gridBody"></tbody>
       </table></div>
     </div>
@@ -313,18 +319,18 @@ td.empty .cellsel{color:var(--err);font-weight:700}
     <div class="signs" id="signs">
       <div class="sign">
         <input type="text" id="sig1t" class="t1" placeholder="Unvan"><div class="sp"></div>
-        <input type="text" id="sig1n" placeholder="Ad Soyad"><div class="cap">Düzenleyen</div>
+        <input type="text" id="sig1n" placeholder="Ad Soyad">
       </div>
       <div class="sign">
         <input type="text" id="sig2t" class="t1" placeholder="Unvan"><div class="sp"></div>
-        <input type="text" id="sig2n" placeholder="Ad Soyad"><div class="cap">Onaylayan</div>
+        <input type="text" id="sig2n" placeholder="Ad Soyad">
       </div>
     </div>
   </div>
 
   <!-- ============ SUMMARY ============ -->
   <div class="panel" id="summaryPanel">
-    <h2><span class="noprint">6 &middot; </span>Kişi Bazlı Toplamlar <span class="n noprint" id="sumNote"></span></h2>
+    <h2><span><span class="noprint">6 &middot; </span>Kişi Bazlı Toplamlar</span> <span class="n noprint" id="sumNote"></span></h2>
     <div class="body">
       <div class="tbl-scroll"><table id="sumTable">
         <thead><tr>
@@ -369,6 +375,12 @@ const SHIFTS = {
   GECE  : {col:'GECE'  , label:'20:30-08:30', s:1230, e:1950},
 };
 const COLS = ['SABAH','GUNDUZ','AKSAM','GECE'];
+const MAX_POSTS = 12;
+const postCount = () => Math.max(1,Math.min(MAX_POSTS, +S.params.posts||1));
+function postName(i){
+  const n=(S.params.postNames||[])[i];
+  return (n&&String(n).trim()) ? String(n).trim() : (i+1)+'. Nöbetçi';
+}
 const NIGHT_FROM = 1200, NIGHT_TO = 1800;   // 20:00 -> 06:00 (ertesi gün)
 
 /* sabit resmî tatiller */
@@ -443,11 +455,11 @@ const LS_KEY='nobetPlanlayici.v1';
 let S = {
   year:new Date().getFullYear(), month:new Date().getMonth()+1,
   unit:'Deniz Hizmetleri Daire Başkanlığı',
-  params:{ minRest:12, maxConsec:3, wn:1 },
+  params:{ minRest:12, maxConsec:3, wn:1, posts:4, postNames:['1. Nöbetçi','2. Nöbetçi','3. Nöbetçi','4. Nöbetçi'] },
   people:[],
   holidaysByYear:{},           // {2026:{'2026-08-30':{name,half}}}
   months:{},                   // {'2026-08':{assign:{},locks:[]}}
-  signs:[{t:'',n:''},{t:'',n:''}],
+  signs:[{t:'Şube Müdürü',n:''},{t:'Daire Başkanı',n:''}],
 };
 const mKey = () => S.year+'-'+pad2(S.month);
 function monthState(){
@@ -467,7 +479,7 @@ function load(){
     S.params=Object.assign({minRest:12,maxConsec:3,wn:1},S.params||{});
     S.people=(S.people||[]).map(normPerson);
     S.holidaysByYear=S.holidaysByYear||{}; S.months=S.months||{};
-    if(!Array.isArray(S.signs)||S.signs.length<2) S.signs=[{t:'',n:''},{t:'',n:''}];
+    if(!Array.isArray(S.signs)||S.signs.length<2) S.signs=[{t:'Şube Müdürü',n:''},{t:'Daire Başkanı',n:''}];
   }catch(e){}
 }
 function normPerson(p){
@@ -534,14 +546,38 @@ function buildShifts(){
     else keys.push('GUNDUZ','GECE');
     keys.forEach(k=>{
       const sh=SHIFTS[k], sAbs=(d-1)*1440+sh.s, eAbs=(d-1)*1440+sh.e;
-      out.push({ id:iso+'|'+sh.col, key:k, col:sh.col, label:sh.label,
-                 iso, day:d, di:d-1, wd:wdayOf(iso), type,
-                 sAbs, eAbs, dur:eAbs-sAbs, night:nightMinutes(sAbs,eAbs),
-                 wknd:(type!=='work') });
+      /* Her vardiyada birden çok nöbet yeri var; her yer ayrı bir "slot" olarak
+         üretilir. Aynı vardiyanın slotları birebir aynı saatlere sahip olduğundan,
+         mevcut çakışma kuralı bir kişinin aynı vardiyada iki yeri tutmasını
+         kendiliğinden engeller. */
+      for(let pi=0; pi<postCount(); pi++){
+        out.push({ id:iso+'|'+sh.col+'|'+pi, key:k, col:sh.col, label:sh.label, post:pi,
+                   iso, day:d, di:d-1, wd:wdayOf(iso), type,
+                   sAbs, eAbs, dur:eAbs-sAbs, night:nightMinutes(sAbs,eAbs),
+                   wknd:(type!=='work') });
+      }
     });
   }
-  out.sort((a,b)=>a.sAbs-b.sAbs);
+  out.sort((a,b)=>a.sAbs-b.sAbs || a.post-b.post);
   return out;
+}
+
+/* Bir günün satır modeli — hem ekran hem Excel aynı modeli kullanır.
+   Her vardiya kendi satırını alır; tarih/gün/durum hücreleri o günün
+   vardiya sayısı kadar dikey birleştirilir. */
+function buildDayRows(){
+  const shifts=buildShifts(), byKey={};
+  shifts.forEach(s=>{ (byKey[s.iso+'|'+s.col]=byKey[s.iso+'|'+s.col]||[]).push(s); });
+  const y=S.year, m=S.month, n=daysInMonth(y,m), rows=[];
+  for(let d=1;d<=n;d++){
+    const iso=isoOf(y,m,d), type=dayTypeOf(iso), groups=[];
+    COLS.forEach(col=>{
+      const arr=byKey[iso+'|'+col];
+      if(arr) groups.push({col:col, label:arr[0].label, dur:arr[0].dur, night:arr[0].night, slots:arr});
+    });
+    rows.push({iso:iso, day:d, wd:wdayOf(iso), type:type, note:dayNote(iso,type), groups:groups});
+  }
+  return {shifts:shifts, rows:rows};
 }
 
 /* ---------------------------- yükler & hedefler ---------------------------- */
@@ -699,7 +735,7 @@ function quotaPlan(shifts,people,T,locks,prevAssign){
   };
   let bestC=null,bestS=Infinity;
   const t0=Date.now();
-  for(let att=0;att<40 && (att<6||Date.now()-t0<1200);att++){
+  for(let att=0;att<40 && (att<6||Date.now()-t0<900);att++){
     reset();
     if(att===0){                                     // 1. deneme: eşit pay + en iyi artan yerleşimi
       for(let k=0;k<K;k++){
@@ -783,7 +819,7 @@ function generate(keepLocks){
 
   const Q=quotaPlan(shifts,people,T,locks,ms.assign);      // 1) tip kotaları
   const assign=assignFromQuota(shifts,people,T,locks,ms.assign,Q,40);   // 2) takvim
-  optimize(shifts,assign,people,T,locks,300);              // 3) rötuş
+  optimize(shifts,assign,people,T,locks,300,3000);         // 3) rötuş
 
   ms.assign=assign;
   ms.locks=[...locks];
@@ -794,7 +830,7 @@ function generate(keepLocks){
 /* Yerel arama: "taşı" ve "takas" komşuluklarında ilk-iyileştirme ile
    hiçbir hamle amaç fonksiyonunu düşürmeyene kadar inilir.
    Kilitli hücreler hiç ellenmez. */
-function refine(shifts,assign,people,T,locks,maxPasses){
+function refine(shifts,assign,people,T,locks,maxPasses,deadline){
   if(people.length<2) return;
   const movable=shifts.filter(s=>!locks.has(s.id));
   if(!movable.length) return;
@@ -809,6 +845,7 @@ function refine(shifts,assign,people,T,locks,maxPasses){
   const EPS=1e-6;
 
   for(let pass=0;pass<maxPasses;pass++){
+    if(deadline && Date.now()>deadline) break;
     let improved=false;
 
     /* --- boşta kalan vardiyaları doldur (planı en az bozan kişiye) --- */
@@ -843,10 +880,15 @@ function refine(shifts,assign,people,T,locks,maxPasses){
 
     /* --- takas: iki vardiyanın sahiplerini değiştir --- */
     for(let i=0;i<movable.length;i++){
+      if(deadline && (i&15)===0 && Date.now()>deadline) break;
       const a=movable[i], A=assign[a.id]; if(!A) continue;
+      const ta=typeKeyOf(a);
       for(let j=i+1;j<movable.length;j++){
         const b=movable[j], B=assign[b.id];
         if(!B||B===A) continue;
+        /* Aynı tipteki iki nöbetin takası süre/gece/hafta sonu yüklerini hiç
+           değiştirmez; amaç fonksiyonu da değişmeyeceği için boşa denemedir. */
+        if(ta===typeKeyOf(b)) continue;
         const s0=sc();
         rm(A,a); rm(B,b);
         let swapped=false;
@@ -865,8 +907,9 @@ function refine(shifts,assign,people,T,locks,maxPasses){
 
 /* İnişten sonra yerel minimumdan çıkmak için "yık-yeniden kur" döngüsü:
    rastgele 1-2 kişinin nöbetleri boşaltılıp yeniden iniliyor, en iyi sonuç saklanıyor. */
-function optimize(shifts,assign,people,T,locks,rounds){
-  refine(shifts,assign,people,T,locks,60);
+function optimize(shifts,assign,people,T,locks,rounds,budgetMs){
+  const tEnd=Date.now()+(budgetMs||3000);
+  refine(shifts,assign,people,T,locks,60,tEnd);
   if(people.length<2) return;
   const movable=shifts.filter(s=>!locks.has(s.id));
   if(movable.length<3) return;
@@ -874,8 +917,7 @@ function optimize(shifts,assign,people,T,locks,rounds){
   const rnd=n=>(Math.random()*n)|0;
   let best=Object.assign({},assign), bestObj=objOf(best);
   let cur=best, curObj=bestObj;
-  const t0=Date.now();
-  for(let r=0;r<rounds && Date.now()-t0<2500;r++){
+  for(let r=0;r<rounds && Date.now()<tEnd;r++){
     const cand=Object.assign({},cur);
     const mode=rnd(3);
     if(mode===0){                     // bir-iki kişinin tüm nöbetlerini boşalt
@@ -889,7 +931,7 @@ function optimize(shifts,assign,people,T,locks,rounds){
       const d0=rnd(31), w=2+rnd(4);
       movable.forEach(s=>{ if(s.di>=d0 && s.di<d0+w) delete cand[s.id]; });
     }
-    refine(shifts,cand,people,T,locks,60);
+    refine(shifts,cand,people,T,locks,60,tEnd);
     if(movable.some(s=>!cand[s.id])) continue;          // eksik kalırsa aday reddedilir
     const o=objOf(cand);
     if(o<bestObj-1e-9){ best=cand; bestObj=o; }
@@ -903,6 +945,13 @@ function optimize(shifts,assign,people,T,locks,rounds){
 /* ---------------------------- denetim ---------------------------- */
 function audit(shifts,assign,people,L,T){
   const out=[];
+  const P=postCount();
+  if(people.length<P)
+    out.push({k:'e',t:'Her nöbette '+P+' görevli gerekiyor ama yalnızca '+people.length+
+      ' aktif personel var. Aynı kişi bir vardiyada iki yeri tutamayacağı için nöbetler boş kalır.'});
+  else if(people.length<P*2)
+    out.push({k:'w',t:'Personel sayısı ('+people.length+') görevli sayısının ('+P+
+      ') iki katından az; dinlenme süreleri zorlanabilir ve kişi başı yük çok yükselir.'});
   const missing=shifts.filter(s=>!assign[s.id]);
   if(missing.length) out.push({k:'e',t:missing.length+' vardiya atanamadı: '+
       missing.slice(0,8).map(s=>trDate(s.iso)+' '+s.label).join(', ')+(missing.length>8?' …':'')+
@@ -956,11 +1005,12 @@ function audit(shifts,assign,people,L,T){
 const $ = id => document.getElementById(id);
 let CACHE={shifts:[],people:[],L:{},T:null};
 
-function renderAll(){ syncInputs(); renderPeople(); renderHolidays(); renderGrid(); renderSummary(); renderWarnings(); }
+function renderAll(){ syncInputs(); renderPostNameInputs(); renderPeople(); renderHolidays(); renderGrid(); renderSummary(); renderWarnings(); }
 
 function syncInputs(){
   $('inpMonth').value=S.month; $('inpYear').value=S.year; $('inpUnit').value=S.unit;
   $('inpRest').value=S.params.minRest; $('inpConsec').value=S.params.maxConsec; $('inpWn').value=String(S.params.wn);
+  $('inpPosts').value=postCount();
   $('sig1t').value=S.signs[0].t; $('sig1n').value=S.signs[0].n;
   $('sig2t').value=S.signs[1].t; $('sig2n').value=S.signs[1].n;
   $('reportTitle').textContent=reportTitle();
@@ -1074,8 +1124,32 @@ function renderBridgeSuggestions(){
 }
 
 /* ---------- çizelge ---------- */
+function renderGridHead(){
+  const P=postCount();
+  $('gridHead').innerHTML=
+    '<th style="width:74px">Tarih</th><th style="width:70px">Gün</th>'+
+    '<th class="l" style="width:112px">Gün Durumu</th>'+
+    '<th style="width:104px">Vardiya</th>'+
+    Array.from({length:P},(_,i)=>'<th>'+esc(postName(i))+'</th>').join('');
+}
+function renderPostNameInputs(){
+  const box=$('postNameRow'); if(!box) return;
+  box.innerHTML='';
+  for(let i=0;i<postCount();i++){
+    const inp=document.createElement('input');
+    inp.type='text'; inp.value=(S.params.postNames||[])[i]||'';
+    inp.placeholder=(i+1)+'. Nöbetçi'; inp.style.width='128px';
+    inp.addEventListener('input',()=>{
+      S.params.postNames=S.params.postNames||[];
+      S.params.postNames[i]=inp.value;
+      save(); renderGridHead(); renderGrid();
+    });
+    box.appendChild(inp);
+  }
+}
+
 function renderGrid(){
-  const shifts=buildShifts(), people=activePeople(), ms=monthState();
+  const {shifts,rows}=buildDayRows(), people=activePeople(), ms=monthState();
   people.forEach(p=>p._izin=izinSetOf(p));
   const valid=new Set(people.map(p=>p.id));
   Object.keys(ms.assign).forEach(k=>{ if(!valid.has(ms.assign[k])) delete ms.assign[k]; });
@@ -1084,48 +1158,60 @@ function renderGrid(){
   ms.locks=ms.locks.filter(k=>shIds.has(k));
 
   const locks=new Set(ms.locks);
-  const byDay={}; shifts.forEach(s=>{ (byDay[s.day]=byDay[s.day]||{})[s.col]=s; });
   const tb=$('gridBody'); tb.innerHTML='';
-  const md=daysInMonth(S.year,S.month);
   const nameOf={}; people.forEach(p=>nameOf[p.id]=p.name);
+  const P=postCount();
+  renderGridHead();
 
-  for(let d=1;d<=md;d++){
-    const iso=isoOf(S.year,S.month,d), type=dayTypeOf(iso), wd=wdayOf(iso);
-    const tr=document.createElement('tr'); tr.className='t-'+type;
-    tr.innerHTML='<td class="daycol">'+trDate(iso)+'</td><td class="daycol">'+DAYS[wd]+'</td>'+
-                 '<td class="tagcol">'+esc(dayNote(iso,type))+'</td>';
-    COLS.forEach(col=>{
-      const sh=(byDay[d]||{})[col], td=document.createElement('td');
-      if(!sh){ td.className='na'; td.textContent='—'; tr.appendChild(td); return; }
-      const cur=ms.assign[sh.id]||'';
-      if(locks.has(sh.id)) td.classList.add('locked');
-      if(!cur) td.classList.add('empty');
-      const wrap=document.createElement('div'); wrap.className='cellwrap';
-      const sel=document.createElement('select'); sel.className='cellsel';
-      sel.title=sh.label+' · '+fmtH(sh.dur)+' saat · '+fmtH(sh.night)+' saat gece';
-      sel.innerHTML='<option value="">— seçilmedi —</option>'+
-        people.map(p=>'<option value="'+p.id+'"'+(p.id===cur?' selected':'')+
-          (p._izin.has(d)?' data-izin="1"':'')+'>'+esc(p.name)+(p._izin.has(d)?' (izinli)':'')+'</option>').join('');
-      sel.addEventListener('change',()=>{
-        if(sel.value) ms.assign[sh.id]=sel.value; else delete ms.assign[sh.id];
-        if(!locks.has(sh.id)){ locks.add(sh.id); ms.locks=[...locks]; }   // elle giriş -> kilitle
-        save(); renderGrid(); renderSummary(); renderWarnings();
-      });
-      const lk=document.createElement('button');
-      lk.className='lockbtn'+(locks.has(sh.id)?' on':''); lk.type='button';
-      lk.textContent=locks.has(sh.id)?'🔒':'🔓';
-      lk.title=locks.has(sh.id)?'Kilitli — yeniden oluşturmada korunur':'Kilitle';
-      lk.addEventListener('click',()=>{
-        if(locks.has(sh.id)) locks.delete(sh.id); else locks.add(sh.id);
-        ms.locks=[...locks]; save(); renderGrid();
-      });
-      const pn=document.createElement('span'); pn.className='print-name';
-      pn.textContent=cur?(nameOf[cur]||''):'';
-      wrap.appendChild(sel); wrap.appendChild(lk); wrap.appendChild(pn);
-      td.appendChild(wrap); tr.appendChild(td);
+  rows.forEach(row=>{
+    row.groups.forEach((g,gi)=>{
+      const tr=document.createElement('tr'); tr.className='t-'+row.type;
+      if(gi===0){                                  // tarih hücreleri günün vardiyaları boyunca birleşir
+        const rs=row.groups.length;
+        tr.innerHTML='<td class="daycol datecol" rowspan="'+rs+'">'+trDate(row.iso)+'</td>'+
+                     '<td class="daycol wdcol" rowspan="'+rs+'">'+DAYS[row.wd]+'</td>'+
+                     '<td class="tagcol" rowspan="'+rs+'">'+esc(row.note)+'</td>';
+      }
+      const tdv=document.createElement('td');
+      tdv.className='shiftcol';
+      tdv.innerHTML='<b>'+g.label.replace('-','–')+'</b><span class="shmeta">'+
+                    fmtH(g.dur)+' sa · '+fmtH(g.night)+' gece</span>';
+      tr.appendChild(tdv);
+
+      for(let pi=0;pi<P;pi++){
+        const sh=g.slots[pi], td=document.createElement('td');
+        if(!sh){ td.className='na'; td.textContent='—'; tr.appendChild(td); continue; }
+        const cur=ms.assign[sh.id]||'';
+        if(locks.has(sh.id)) td.classList.add('locked');
+        if(!cur) td.classList.add('empty');
+        const wrap=document.createElement('div'); wrap.className='cellwrap';
+        const sel=document.createElement('select'); sel.className='cellsel';
+        sel.title=trDate(row.iso)+' · '+g.label+' · '+postName(pi)+' · '+
+                  fmtH(sh.dur)+' saat ('+fmtH(sh.night)+' saat gece)';
+        sel.innerHTML='<option value="">— seçilmedi —</option>'+
+          people.map(p=>'<option value="'+p.id+'"'+(p.id===cur?' selected':'')+'>'+
+            esc(p.name)+(p._izin.has(row.day)?' (izinli)':'')+'</option>').join('');
+        sel.addEventListener('change',()=>{
+          if(sel.value) ms.assign[sh.id]=sel.value; else delete ms.assign[sh.id];
+          if(!locks.has(sh.id)){ locks.add(sh.id); ms.locks=[...locks]; }   // elle giriş -> kilitle
+          save(); renderGrid(); renderSummary(); renderWarnings();
+        });
+        const lk=document.createElement('button');
+        lk.className='lockbtn'+(locks.has(sh.id)?' on':''); lk.type='button';
+        lk.textContent=locks.has(sh.id)?'🔒':'🔓';
+        lk.title=locks.has(sh.id)?'Kilitli — yeniden oluşturmada korunur':'Kilitle';
+        lk.addEventListener('click',()=>{
+          if(locks.has(sh.id)) locks.delete(sh.id); else locks.add(sh.id);
+          ms.locks=[...locks]; save(); renderGrid();
+        });
+        const pn=document.createElement('span'); pn.className='print-name';
+        pn.textContent=cur?(nameOf[cur]||''):'';
+        wrap.appendChild(sel); wrap.appendChild(lk); wrap.appendChild(pn);
+        td.appendChild(wrap); tr.appendChild(td);
+      }
+      tb.appendChild(tr);
     });
-    tb.appendChild(tr);
-  }
+  });
   const T=targetsOf(shifts,people);
   CACHE={shifts,people,L:computeLoads(shifts,ms.assign,people),T};
   syncInputs();
@@ -1162,7 +1248,7 @@ function renderSummary(){
     '<td>'+fmtH(sum('night'))+'</td><td class="noprint"></td>'+
     '<td>'+fmtH(T.sumNight/T.N)+'</td>'+
     '<td>'+fmtH(sum('wknd'))+'</td><td></td></tr>';
-  $('sumNote').textContent=shifts.length+' vardiya · '+fmtH(T.sumTotal)+' saat · '+fmtH(T.sumNight)+' saat gece';
+  $('sumNote').textContent=shifts.length+' nöbet yeri ('+(shifts.length/postCount())+' vardiya × '+postCount()+' görevli) · '+fmtH(T.sumTotal)+' saat · '+fmtH(T.sumNight)+' saat gece';
 }
 
 /* ---------- denetim ---------- */
@@ -1350,42 +1436,60 @@ function exportXlsx(){
   const R=[], rowH={};
   R.push([T_(reportTitle(),ST.title)]); rowH[1]=30;
   R.push([T_('Düzenleme tarihi: '+new Date().toLocaleDateString('tr-TR')+
-             '   ·   Toplam '+shifts.length+' vardiya, '+fmtH(T.sumTotal)+' saat ('+fmtH(T.sumNight)+' saat gece)',ST.sub)]);
+             '   ·   '+(shifts.length/postCount())+' vardiya × '+postCount()+' görevli = '+shifts.length+' nöbet, '+fmtH(T.sumTotal)+' saat ('+fmtH(T.sumNight)+' saat gece)',ST.sub)]);
   R.push([]);
-  R.push([T_('Tarih',ST.head),T_('Gün',ST.head),T_('Gün Durumu',ST.head),
-          T_('01:30 - 08:30\n(7,0 sa · 4,5 gece)',ST.head),
-          T_('08:30 - 20:30\n(12,0 sa · 0,5 gece)',ST.head),
-          T_('17:30 - 01:30\n(8,0 sa · 5,5 gece)',ST.head),
-          T_('20:30 - 08:30\n(12,0 sa · 9,5 gece)',ST.head)]);
-  rowH[4]=34;
+  const P=postCount(), NC=4+P, LAST=colL(NC-1);
+  R.push([T_('Tarih',ST.head),T_('Gün',ST.head),T_('Gün Durumu',ST.head),T_('Vardiya',ST.head)]
+         .concat(Array.from({length:P},(_,i)=>T_(postName(i),ST.head))));
+  rowH[4]=30;
   const HEADER_ROW=4;
-  for(let d=1;d<=md;d++){
-    const iso=isoOf(S.year,S.month,d), type=dayTypeOf(iso), wd=wdayOf(iso);
-    const st = type==='weekend'?ST.wknd : type==='holiday'?ST.holi : type==='half'?ST.half : ST.ctr;
+  const merges=['A1:'+LAST+'1','A2:'+LAST+'2'];
+  buildDayRows().rows.forEach(row=>{
+    const st = row.type==='weekend'?ST.wknd : row.type==='holiday'?ST.holi : row.type==='half'?ST.half : ST.ctr;
     const stL= (st===ST.ctr)?ST.left:st;
-    const row=[T_(trDate(iso),st),T_(DAYS[wd],st),T_(dayNote(iso,type),stL)];
-    COLS.forEach(col=>{
-      const sh=(byDay[d]||{})[col];
-      if(!sh) row.push(T_('—',ST.na));
-      else { const pid=ms.assign[sh.id]; row.push(T_(pid?(nameOf[pid]||''):'',st)); }
+    const first=R.length+1;                       // bu günün ilk satırı (1 tabanlı)
+    row.groups.forEach((g,gi)=>{
+      const line=gi===0
+        ? [T_(trDate(row.iso),st),T_(DAYS[row.wd],st),T_(row.note,stL)]
+        : [E_(st),E_(st),E_(stL)];                // birleştirilen alanın alt hücreleri (kenarlık için)
+      line.push(T_(g.label+'\n'+fmtH(g.dur)+' sa · '+fmtH(g.night)+' gece',st));
+      for(let pi=0;pi<P;pi++){
+        const sh=g.slots[pi];
+        if(!sh) line.push(T_('—',ST.na));
+        else { const pid=ms.assign[sh.id]; line.push(T_(pid?(nameOf[pid]||''):'',st)); }
+      }
+      R.push(line);
     });
-    R.push(row);
-  }
+    if(row.groups.length>1){                      // tarih hücrelerini dikey birleştir
+      const last=first+row.groups.length-1;
+      ['A','B','C'].forEach(c=>merges.push(c+first+':'+c+last));
+    }
+  });
   R.push([]); R.push([]);
-  /* imza alanları */
+  /* imza alanları — B..son kolon arası ikiye bölünür, iki blok eşit genişlikte
+     ve aynadan simetrik olur; aralarında en az bir kolon boşluk kalır. */
+  const sgSpan=NC-1, sgW=Math.max(1,Math.floor((sgSpan-1)/2));
+  const sgA1=1, sgA2=sgA1+sgW-1, sgB1=(NC-1)-sgW+1, sgB2=NC-1;
   const sBase=R.length+1;
-  R.push([null,T_(S.signs[0].t||'',ST.sigT),null,null,null,T_(S.signs[1].t||'',ST.sigT),null]);
+  const sigRow=(v,st)=>{
+    const l=new Array(NC).fill(null);
+    for(let i=sgA1;i<=sgA2;i++) l[i]=E_(st);
+    for(let i=sgB1;i<=sgB2;i++) l[i]=E_(st);
+    if(v){ l[sgA1]=T_(v[0],st); l[sgB1]=T_(v[1],st); }
+    return l;
+  };
+  R.push(sigRow([S.signs[0].t||'',S.signs[1].t||''],ST.sigT));
   R.push([]); rowH[sBase+1]=46;
-  R.push([null,E_(ST.sigLine),null,null,null,E_(ST.sigLine),null]);
-  R.push([null,T_(S.signs[0].n||'',ST.sigT),null,null,null,T_(S.signs[1].n||'',ST.sigT),null]);
-  R.push([null,T_('Düzenleyen',ST.sigLbl),null,null,null,T_('Onaylayan',ST.sigLbl),null]);
-  const merges=['A1:G1','A2:G2',
-    'B'+sBase+':C'+sBase, 'F'+sBase+':G'+sBase,
-    'B'+(sBase+2)+':C'+(sBase+2), 'F'+(sBase+2)+':G'+(sBase+2),
-    'B'+(sBase+3)+':C'+(sBase+3), 'F'+(sBase+3)+':G'+(sBase+3),
-    'B'+(sBase+4)+':C'+(sBase+4), 'F'+(sBase+4)+':G'+(sBase+4)];
-  const sheet1=sheetXml(R,{widths:[11.5,11.5,26,18,18,18,18],merges:merges,
-                           freeze:HEADER_ROW, tabSel:true, rowH:rowH});
+  R.push(sigRow(null,ST.sigLine));
+  R.push(sigRow([S.signs[0].n||'',S.signs[1].n||''],ST.sigT));
+  [0,2,3].forEach(off=>{
+    const r=sBase+off;
+    if(sgA2>sgA1) merges.push(colL(sgA1)+r+':'+colL(sgA2)+r);
+    if(sgB2>sgB1) merges.push(colL(sgB1)+r+':'+colL(sgB2)+r);
+  });
+  const widths=[11.5,10.5,24,16].concat(Array.from({length:P},()=>17));
+  const sheet1=sheetXml(R,{widths:widths,merges:merges,freeze:HEADER_ROW,tabSel:true,rowH:rowH,
+                           landscape:(P>3)});
 
   /* ---- Sayfa 2: özet ---- */
   const R2=[], rowH2={};
@@ -1487,6 +1591,17 @@ function init(){
   $('inpRest').addEventListener('change',e=>{ S.params.minRest=Math.max(0,+e.target.value||0); save(); renderWarnings(); });
   $('inpConsec').addEventListener('change',e=>{ S.params.maxConsec=Math.max(0,+e.target.value||0); save(); renderWarnings(); });
   $('inpWn').addEventListener('change',e=>{ S.params.wn=+e.target.value; save(); });
+  $('inpPosts').addEventListener('change',e=>{
+    const v=Math.max(1,Math.min(MAX_POSTS,parseInt(e.target.value,10)||1));
+    if(v===postCount()){ e.target.value=v; return; }
+    const ms=monthState();
+    if(Object.keys(ms.assign).length &&
+       !confirm('Görevli sayısını değiştirmek bu ayın çizelgesini sıfırlar. Devam edilsin mi?')){
+      e.target.value=postCount(); return;
+    }
+    S.params.posts=v; ms.assign={}; ms.locks=[];
+    save(); renderPostNameInputs(); renderGridHead(); renderAll();
+  });
   [['sig1t',0,'t'],['sig1n',0,'n'],['sig2t',1,'t'],['sig2n',1,'n']].forEach(([id,i,f])=>
     $(id).addEventListener('input',e=>{ S.signs[i][f]=e.target.value; save(); }));
 
@@ -1523,7 +1638,7 @@ function init(){
     busy('Denge ince ayarı yapılıyor…',()=>{
       const {shifts,people,T}=CACHE, ms=monthState();
       people.forEach(p=>p._izin=izinSetOf(p));
-      optimize(shifts,ms.assign,people,T,new Set(ms.locks),2500);
+      optimize(shifts,ms.assign,people,T,new Set(ms.locks),2500,4000);
       save(); renderAll(); toast('İnce ayar tamamlandı — kilitli hücrelere dokunulmadı.','g');
     });
   });
@@ -1546,9 +1661,9 @@ function init(){
         const o=JSON.parse(fr.result);
         if(!o||typeof o!=='object') throw 0;
         S=Object.assign({},S,o);
-        S.params=Object.assign({minRest:12,maxConsec:3,wn:1},S.params||{});
+        S.params=Object.assign({minRest:12,maxConsec:3,wn:1,posts:4,postNames:[]},S.params||{});
         S.people=(S.people||[]).map(normPerson);
-        if(!Array.isArray(S.signs)||S.signs.length<2) S.signs=[{t:'',n:''},{t:'',n:''}];
+        if(!Array.isArray(S.signs)||S.signs.length<2) S.signs=[{t:'Şube Müdürü',n:''},{t:'Daire Başkanı',n:''}];
         save(); renderAll(); toast('Yedek yüklendi.','g');
       }catch(err){ alert('Dosya okunamadı ya da geçersiz.'); } };
     fr.readAsText(f); e.target.value='';
