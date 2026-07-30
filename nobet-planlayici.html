@@ -136,8 +136,30 @@ td.empty .cellsel{color:var(--err);font-weight:700}
 .sign .sp{height:52px;border-bottom:1px solid var(--ink);margin:6px 0 5px}
 .sign .cap{font-size:11px;color:var(--muted)}
 
+/* ---------- vukuat / imza formu ---------- */
+.formpanel{display:none}
+body.pf .formpanel{display:block}
+#formTable{table-layout:fixed;width:100%}
+#formTable th{font-size:11px;padding:5px 4px}
+#formTable td{height:52px;vertical-align:top;font-size:12px;padding:4px 5px}
+#formTable td.fill{text-align:center;vertical-align:middle;white-space:nowrap}
+#formTable td.nob{text-align:left;vertical-align:middle;font-weight:600}
+#formTable tr.dstart td{border-top:2px solid #9aa5b4}
+#formTable .c-tar{width:10%}#formTable .c-gun{width:8%}#formTable .c-var{width:13%}
+#formTable .c-yer{width:12%}#formTable .c-nob{width:17%}
+#formTable .c-vuk{width:29%}#formTable .c-imz{width:11%}
+
 /* ---------- print ---------- */
 @media print{
+  /* vukuat formu yazdırılırken diğer bölümler gizlenir */
+  body.pf .wrap > .panel:not(.formpanel){display:none!important}
+  body.pf .formpanel{display:block!important;border:none}
+  body.pf .formpanel .report-title,body.pf .formpanel .report-sub{display:block}
+  body.pf #formTable{font-size:9.5pt}
+  body.pf #formTable th{font-size:8.5pt;padding:4px 3px}
+  body.pf #formTable td{height:13mm;font-size:9pt}
+  body.pf #formTable tr{page-break-inside:avoid}
+  body.pf #formTable thead{display:table-header-group}
   @page{size:A4 portrait;margin:11mm 9mm}
   body{background:#fff;font-size:10px}
   .wrap{max-width:none;padding:0}
@@ -180,6 +202,7 @@ td.empty .cellsel{color:var(--err);font-weight:700}
       <button class="ghost" id="btnBalance" title="Kilitli hücrelere dokunmadan mevcut planı dengeler">⚖ İnce Ayar</button>
       <button class="ghost" id="btnXlsx">⬇ Excel (.xlsx)</button>
       <button class="ghost" id="btnPrint">🖨 Yazdır / PDF</button>
+      <button class="ghost" id="btnForm" title="Her nöbetçi için vukuat ve imza yeri olan A4 form">🖊 Vukuat / İmza Formu</button>
       <button class="ghost" id="btnSave">💾 Yedek Al</button>
       <button class="ghost" id="btnLoad">📂 Yedek Yükle</button>
     </div>
@@ -325,6 +348,22 @@ td.empty .cellsel{color:var(--err);font-weight:700}
         <input type="text" id="sig2t" class="t1" placeholder="Unvan"><div class="sp"></div>
         <input type="text" id="sig2n" placeholder="Ad Soyad">
       </div>
+    </div>
+  </div>
+
+  <!-- ============ VUKUAT / İMZA FORMU (yalnız yazdırılırken görünür) ============ -->
+  <div class="panel formpanel" id="formPanel">
+    <div class="report-title" id="formTitle"></div>
+    <div class="report-sub" id="formSub"></div>
+    <div class="body" style="padding:0">
+      <table id="formTable">
+        <thead><tr>
+          <th class="c-tar">Tarih</th><th class="c-gun">Gün</th><th class="c-var">Vardiya</th>
+          <th class="c-yer">Nöbet Yeri</th><th class="c-nob">Nöbetçi</th>
+          <th class="c-vuk">Vukuat / Açıklama</th><th class="c-imz">İmza</th>
+        </tr></thead>
+        <tbody id="formBody"></tbody>
+      </table>
     </div>
   </div>
 
@@ -476,11 +515,27 @@ function load(){
     const raw=localStorage.getItem(LS_KEY); if(!raw) return;
     const o=JSON.parse(raw);
     if(o && typeof o==='object') S=Object.assign(S,o);
-    S.params=Object.assign({minRest:12,maxConsec:3,wn:1},S.params||{});
+    S.params=normParams(S.params);
     S.people=(S.people||[]).map(normPerson);
     S.holidaysByYear=S.holidaysByYear||{}; S.months=S.months||{};
-    if(!Array.isArray(S.signs)||S.signs.length<2) S.signs=[{t:'Şube Müdürü',n:''},{t:'Daire Başkanı',n:''}];
+    S.signs=normSigns(S.signs);
   }catch(e){}
+}
+/* Eski sürümlerden gelen kayıtlarda yeni alanlar bulunmaz; tek bir yerden
+   tamamlanır ki localStorage ile JSON yedeği yolları birbirinden ayrışmasın. */
+function normParams(p){
+  const q=Object.assign({minRest:12,maxConsec:3,wn:1,posts:4,postNames:[]},p||{});
+  q.minRest=Math.max(0,+q.minRest||0);
+  q.maxConsec=Math.max(0,+q.maxConsec||0);
+  q.wn=+q.wn||1;
+  q.posts=Math.max(1,Math.min(MAX_POSTS,parseInt(q.posts,10)||4));
+  if(!Array.isArray(q.postNames)) q.postNames=[];
+  return q;
+}
+function normSigns(v){
+  const d=[{t:'Şube Müdürü',n:''},{t:'Daire Başkanı',n:''}];
+  if(!Array.isArray(v)||v.length<2) return d;
+  return [0,1].map(i=>({t:(v[i]&&v[i].t)||d[i].t, n:(v[i]&&v[i].n)||''}));
 }
 function normPerson(p){
   return { id:p.id||uid(), name:p.name||'', active:p.active!==false,
@@ -1217,6 +1272,44 @@ function renderGrid(){
   syncInputs();
 }
 
+/* ---------- vukuat / imza formu ----------
+   Her nöbetçi için bir satır: kimlik bilgileri hazır basılı gelir, "Vukuat /
+   Açıklama" ve "İmza" hücreleri elle yazmak için boş bırakılır. Böylece nöbetin
+   tutulduğu belgelenir. */
+function renderVukuatForm(){
+  const {rows}=buildDayRows(), ms=monthState();
+  const nameOf={}; activePeople().forEach(p=>nameOf[p.id]=p.name);
+  const tb=$('formBody'); tb.innerHTML='';
+  rows.forEach(row=>{
+    let firstOfDay=true;
+    row.groups.forEach(g=>{
+      g.slots.forEach((sh,pi)=>{
+        const pid=ms.assign[sh.id];
+        const tr=document.createElement('tr');
+        if(firstOfDay){ tr.className='dstart'; firstOfDay=false; }
+        tr.innerHTML=
+          '<td class="fill">'+trDate(row.iso)+'</td>'+
+          '<td class="fill">'+DAYS_S[row.wd]+'</td>'+
+          '<td class="fill">'+g.label.replace('-','–')+'</td>'+
+          '<td class="fill">'+esc(postName(pi))+'</td>'+
+          '<td class="nob">'+esc(pid?(nameOf[pid]||''):'')+'</td>'+
+          '<td></td><td></td>';                       // vukuat + imza: elle doldurulacak
+        tb.appendChild(tr);
+      });
+    });
+  });
+  $('formTitle').textContent=reportTitle()+' — Vukuat ve İmza Formu';
+  $('formSub').textContent='Nöbeti tutan personel, varsa vukuatı ilgili kutuya yazar ve imzalar.';
+}
+function printVukuatForm(){
+  if(!CACHE.people.length){ toast('Önce personel ekleyip planı oluşturun.','e'); return; }
+  renderVukuatForm();
+  document.body.classList.add('pf');
+  const done=()=>document.body.classList.remove('pf');
+  window.addEventListener('afterprint',done,{once:true});
+  setTimeout(()=>{ window.print(); setTimeout(done,800); },60);
+}
+
 /* ---------- özet ---------- */
 function renderSummary(){
   const {shifts,people,L,T}=CACHE, tb=$('sumBody'), tf=$('sumFoot');
@@ -1331,7 +1424,8 @@ function zipBlob(files){
 
 /* stil indeksleri */
 const ST={ def:0, title:1, sub:2, head:3, ctr:4, left:5, wknd:6, holi:7, half:8,
-           na:9, num:10, bold:11, numB:12, sigT:13, sigLbl:14, sigLine:15, h2:16, numB2:17 };
+           na:9, num:10, bold:11, numB:12, sigT:13, sigLbl:14, sigLine:15, h2:16, numB2:17,
+           blank:18, ctrMid:19, leftMid:20 };
 const STYLES_XML =
 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
 '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
@@ -1361,7 +1455,7 @@ const STYLES_XML =
  '<border><left/><right/><top style="thin"><color rgb="FF1B2330"/></top><bottom/><diagonal/></border>'+
 '</borders>'+
 '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
-'<cellXfs count="18">'+
+'<cellXfs count="21">'+
  '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'+                                                                    /*0 def*/
  '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+ /*1 title*/
  '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center"/></xf>'+ /*2 sub*/
@@ -1380,6 +1474,9 @@ const STYLES_XML =
  '<xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1"/>'+                                                     /*15 sigLine*/
  '<xf numFmtId="0" fontId="6" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="left"/></xf>'+  /*16 h2*/
  '<xf numFmtId="164" fontId="4" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+ /*17 numB2*/
+ '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="top" wrapText="1"/></xf>'+ /*18 boş yazı kutusu*/
+ '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>'+ /*19*/
+ '<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>'+ /*20 kalın sol*/
 '</cellXfs>'+
 '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'+
 '</styleSheet>';
@@ -1452,7 +1549,7 @@ function exportXlsx(){
       const line=gi===0
         ? [T_(trDate(row.iso),st),T_(DAYS[row.wd],st),T_(row.note,stL)]
         : [E_(st),E_(st),E_(stL)];                // birleştirilen alanın alt hücreleri (kenarlık için)
-      line.push(T_(g.label+'\n'+fmtH(g.dur)+' sa · '+fmtH(g.night)+' gece',st));
+      line.push(T_(g.label,st));            // yalnız saat aralığı
       for(let pi=0;pi<P;pi++){
         const sh=g.slots[pi];
         if(!sh) line.push(T_('—',ST.na));
@@ -1524,8 +1621,32 @@ function exportXlsx(){
   R2.push([T_('Gece nöbeti: 20:00 – 06:00 arasında geçen süre. Devir saatleri dağıtımda dikkate alınır, ay içi toplamlara eklenmez.',ST.sigLbl)]);
   const sheet2=sheetXml(R2,{widths:[5,26,13,13,17,13,15,20,12,12],freeze:3,rowH:rowH2,landscape:true});
 
+  /* ---- Sayfa 3: Vukuat ve İmza formu ----
+     Her nöbetçi için bir satır; son iki hücre elle yazılmak üzere boş ve yüksek. */
+  const R3=[], rowH3={};
+  R3.push([T_(reportTitle()+' — Vukuat ve İmza Formu',ST.h2)]); rowH3[1]=22;
+  R3.push([T_('Nöbeti tutan personel, varsa vukuatı ilgili kutuya yazar ve imzalar.',ST.sub)]);
+  R3.push([T_('Tarih',ST.head),T_('Gün',ST.head),T_('Vardiya',ST.head),T_('Nöbet Yeri',ST.head),
+           T_('Nöbetçi',ST.head),T_('Vukuat / Açıklama',ST.head),T_('İmza',ST.head)]);
+  rowH3[3]=26;
+  const FORM_HEADER_ROW=3;
+  buildDayRows().rows.forEach(row=>{
+    row.groups.forEach(g=>{
+      g.slots.forEach((sh,pi)=>{
+        const pid=ms.assign[sh.id];
+        rowH3[R3.length+1]=38;                      // elle yazmaya yeterli satır yüksekliği
+        R3.push([T_(trDate(row.iso),ST.ctrMid),T_(DAYS_S[row.wd],ST.ctrMid),
+                 T_(g.label,ST.ctrMid),T_(postName(pi),ST.ctrMid),
+                 T_(pid?(nameOf[pid]||''):'',ST.leftMid),
+                 E_(ST.blank),E_(ST.blank)]);
+      });
+    });
+  });
+  const sheet3=sheetXml(R3,{widths:[11.5,7.5,13,15,22,42,15],
+                            merges:['A1:G1','A2:G2'],freeze:FORM_HEADER_ROW,rowH:rowH3});
+
   /* ---- paket ---- */
-  const SN1='Nöbet Listesi', SN2='Özet';
+  const SN1='Nöbet Listesi', SN2='Özet', SN3='Vukuat ve İmza';
   const files=[
     {name:'[Content_Types].xml',data:U8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
       '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
@@ -1534,6 +1655,7 @@ function exportXlsx(){
       '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
       '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'+
       '<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'+
+      '<Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'+
       '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
       '</Types>')},
     {name:'_rels/.rels',data:U8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
@@ -1546,19 +1668,26 @@ function exportXlsx(){
       '<sheets>'+
         '<sheet name="'+esc(SN1)+'" sheetId="1" r:id="rId1"/>'+
         '<sheet name="'+esc(SN2)+'" sheetId="2" r:id="rId2"/>'+
+        '<sheet name="'+esc(SN3)+'" sheetId="3" r:id="rId3"/>'+
       '</sheets>'+
-      '<definedNames><definedName name="_xlnm.Print_Titles" localSheetId="0">'+
-        "'"+SN1+"'!$"+HEADER_ROW+':$'+HEADER_ROW+'</definedName></definedNames>'+
+      '<definedNames>'+
+        '<definedName name="_xlnm.Print_Titles" localSheetId="0">'+
+          "'"+SN1+"'!$"+HEADER_ROW+':$'+HEADER_ROW+'</definedName>'+
+        '<definedName name="_xlnm.Print_Titles" localSheetId="2">'+
+          "'"+SN3+"'!$"+FORM_HEADER_ROW+':$'+FORM_HEADER_ROW+'</definedName>'+
+      '</definedNames>'+
       '</workbook>')},
     {name:'xl/_rels/workbook.xml.rels',data:U8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
       '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
       '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'+
       '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>'+
-      '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+
+      '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>'+
+      '<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+
       '</Relationships>')},
     {name:'xl/styles.xml',data:U8(STYLES_XML)},
     {name:'xl/worksheets/sheet1.xml',data:U8(sheet1)},
     {name:'xl/worksheets/sheet2.xml',data:U8(sheet2)},
+    {name:'xl/worksheets/sheet3.xml',data:U8(sheet3)},
   ];
   download(zipBlob(files),'Nobet_Listesi_'+S.year+'_'+pad2(S.month)+'_'+MONTHS[S.month-1]+'.xlsx');
   toast('Excel dosyası indirildi.','g');
@@ -1649,6 +1778,7 @@ function init(){
   });
   $('btnXlsx').addEventListener('click',exportXlsx);
   $('btnPrint').addEventListener('click',()=>window.print());
+  $('btnForm').addEventListener('click',printVukuatForm);
   $('btnSave').addEventListener('click',()=>{
     download(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}),
              'nobet-yedek-'+S.year+pad2(S.month)+'.json');
@@ -1661,9 +1791,9 @@ function init(){
         const o=JSON.parse(fr.result);
         if(!o||typeof o!=='object') throw 0;
         S=Object.assign({},S,o);
-        S.params=Object.assign({minRest:12,maxConsec:3,wn:1,posts:4,postNames:[]},S.params||{});
+        S.params=normParams(S.params);
         S.people=(S.people||[]).map(normPerson);
-        if(!Array.isArray(S.signs)||S.signs.length<2) S.signs=[{t:'Şube Müdürü',n:''},{t:'Daire Başkanı',n:''}];
+        S.signs=normSigns(S.signs);
         save(); renderAll(); toast('Yedek yüklendi.','g');
       }catch(err){ alert('Dosya okunamadı ya da geçersiz.'); } };
     fr.readAsText(f); e.target.value='';

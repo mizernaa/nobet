@@ -118,13 +118,28 @@ Zorunlu hâllerde bile **çakışma** ve **izin günü** ihlal edilmez; sıkış
 o günün vardiyaları boyunca dikey olarak birleştirilir. Nöbet yerleri kolonlarda
 yer alır.
 
-**Excel** iki sayfa üretir: *Nöbet Listesi* (başlık, gün tipine göre renkli
+**Excel** üç sayfa üretir: *Nöbet Listesi* (başlık, gün tipine göre renkli
 çizelge, birleştirilmiş tarih hücreleri, altta iki imza alanı) ve *Özet* (kişi
-bazlı toplamlar, sayısal hücreler). Başlık satırı donuk, her sayfada yinelenir,
+bazlı toplamlar, sayısal hücreler) ve *Vukuat ve İmza* (aşağıda). Başlık satırı donuk, her sayfada yinelenir,
 sayfaya sığdırılmış olarak gelir; 4+ görevlide yatay sayfa düzenine geçer.
+
+Excel'in *Vardiya* sütununda yalnızca **saat aralığı** yazar.
 
 **Yazdır / PDF** ile bir ay tek A4 sayfaya, imza alanlarıyla birlikte sığar;
 özet tablosu ayrı sayfaya geçer.
+
+### Vukuat ve İmza Formu
+
+**🖊 Vukuat / İmza Formu** düğmesi, nöbetin tutulduğunu belgeleyen ayrı bir A4
+form basar. Her nöbetçi için bir satır: tarih, gün, vardiya saati, nöbet yeri ve
+ad soyad hazır basılı gelir; **Vukuat / Açıklama** ve **İmza** hücreleri elle
+doldurulmak üzere boş ve yüksek bırakılır. Bir şey olursa kutuya yazılır ve
+imzalanır.
+
+Okunur boyutta A4 sayfasına **yaklaşık 20 satır** sığar; günler arasında kalın
+ayraç çizgisi vardır. 4 görevliyle bir ay 248 satır, ~13 sayfa eder. Aynı form
+Excel'in üçüncü sayfası (*Vukuat ve İmza*) olarak da gelir — böylece isterseniz
+Excel'den yazdırabilirsiniz.
 
 İmza alanları **Şube Müdürü** ve **Daire Başkanı** olarak hazır gelir; unvan ve
 adları doğrudan sayfada değiştirebilirsiniz — hem Excel'e hem çıktıya geçer.
