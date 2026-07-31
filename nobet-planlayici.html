@@ -87,6 +87,7 @@ td.na{color:#c3cad6;background:repeating-linear-gradient(45deg,#fafbfd,#fafbfd 5
 .shiftcol{white-space:nowrap;font-size:12px;line-height:1.25}
 .shiftcol b{font-weight:650}
 .shiftcol .shmeta{display:block;font-size:10.5px;color:var(--muted);font-weight:400}
+.prn{display:none}
 .tagcol{font-size:11.5px;color:#4b5563;text-align:left;white-space:nowrap}
 .cellsel{width:100%;min-width:120px;border:1px solid transparent;background:transparent;padding:3px 4px;font-size:12.5px;border-radius:5px}
 .cellsel:hover{border-color:var(--line);background:#fff}
@@ -175,12 +176,20 @@ body.pf .formpanel{display:block}
   tr{page-break-inside:avoid}
   thead{display:table-header-group}
   .cellsel,.lockbtn{display:none!important}
-  .print-name{display:inline;font-size:9.5px;color:#111}
-  .shiftcol{font-size:8.5px}
-  .shiftcol .shmeta{font-size:7.5px;color:#555}
-  .tagcol{color:#1b2330}
+  /* --- PDF çıktısına özel sadeleştirme (ekran ve Excel etkilenmez) ---
+     Gün Durumu sütunu ve vardiya altındaki süre/gece satırı kaldırılır;
+     boşalan yer isimlerin daha büyük yazılmasına ayrılır. */
+  #gridTable .tagcol-h,#gridTable td.tagcol{display:none!important}
+  .shiftcol .shmeta{display:none!important}
+  .scr{display:none}
+  .prn{display:inline}
+  #gridTable{font-size:11px}
+  #gridTable td,#gridTable th{padding:3.5px 4px}
+  .print-name{display:inline;font-size:11px;color:#111}
+  .shiftcol{font-size:10.5px;font-weight:600}
+  .daycol{font-size:10.5px}
   td.locked{box-shadow:none}
-  .signs{padding:22px 30px 0}
+  .signs{padding:22px 30px 0;page-break-inside:avoid;break-inside:avoid}
   .sign input{border-bottom:none}
   #summaryPanel{page-break-before:always}
   #summaryPanel .body{padding:0}
@@ -1183,8 +1192,10 @@ function renderGridHead(){
   const P=postCount();
   $('gridHead').innerHTML=
     '<th style="width:74px">Tarih</th><th style="width:70px">Gün</th>'+
-    '<th class="l" style="width:112px">Gün Durumu</th>'+
-    '<th style="width:104px">Vardiya</th>'+
+    '<th class="l tagcol-h" style="width:112px">Gün Durumu</th>'+
+    /* PDF çıktısında bu sütun "Nöbet Saatleri" adını alır (yalnız baskıda) */
+    '<th style="width:104px"><span class="scr">Vardiya</span>'+
+      '<span class="prn">Nöbet Saatleri</span></th>'+
     Array.from({length:P},(_,i)=>'<th>'+esc(postName(i))+'</th>').join('');
 }
 function renderPostNameInputs(){

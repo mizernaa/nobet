@@ -125,8 +125,14 @@ sayfaya sığdırılmış olarak gelir; 4+ görevlide yatay sayfa düzenine geç
 
 Excel'in *Vardiya* sütununda yalnızca **saat aralığı** yazar.
 
-**Yazdır / PDF** ile bir ay tek A4 sayfaya, imza alanlarıyla birlikte sığar;
-özet tablosu ayrı sayfaya geçer.
+**Yazdır / PDF** çıktısı sadeleştirilmiştir: *Gün Durumu* sütunu çıkarılır,
+*Vardiya* sütunu **Nöbet Saatleri** adını alır ve saatin altındaki süre/gece
+satırı basılmaz. Boşalan yer isimlere ayrıldığı için adlar belirgin biçimde daha
+büyük yazılır. Gün tipi yine satır rengiyle ayırt edilir. Bu sadeleştirme
+**yalnız PDF/yazdırma** içindir; ekran ve Excel değişmez.
+
+4 görevlili bir ay, imza alanlarıyla birlikte **2 A4 sayfası** tutar (başlık
+satırı ikinci sayfada yinelenir); özet tablosu ayrı sayfaya geçer.
 
 ### Vukuat ve İmza Formu
 
